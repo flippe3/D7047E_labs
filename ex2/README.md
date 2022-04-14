@@ -6,8 +6,8 @@
 | AlexNet Feature-Extraction     | 0.5953        |
 | ConvNet MNIST                  | 0.9888        |
 | ConvNet SVHN FT                | 0.8470        |
-| ConvNet SVHN FE                | 0.7292        |
+| ConvNet SVHN FE                | 0.8050        |
 
 We used 20 epochs for fine-tuning AlexNet and 4 epochs for feature extraction.
 
-We used 20 epochs for training our convnet on MNIST, 4 epochs for FE and 20 epochs for FT.
+We used 20 epochs for training our convnet on MNIST, 10 epochs for FE and 20 epochs for FT.
