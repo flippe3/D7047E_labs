@@ -1,8 +1,10 @@
 import torch
 import torchvision 
 import torch.nn as nn
-from torchvision.transforms import ToTensor
+from torchvision import transforms
 from torch.utils.data import DataLoader, random_split
+import copy
+
 
 if torch.cuda.is_available():    
     device = torch.device("cuda")
@@ -12,10 +14,8 @@ else:
     print('NO GPU AVAILABLE ERROR')
     device = torch.device("cpu")
 
-train_dataset_mnist = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=ToTensor())
-test_dataset_mnist = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=ToTensor())
-
-print(len(train_dataset_mnist))
+train_dataset_mnist = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transforms.ToTensor())
+test_dataset_mnist = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transforms.ToTensor())
 
 train_dataset_mnist, val_dataset_mnist = random_split(train_dataset_mnist, [55000, 5000])
 
@@ -65,9 +65,9 @@ def train(epochs, optimizer, loss_fn, train_loader, test_loader, model):
                 end=''
             )
 
-        print('\n*************************************')
-        print('Validation the model after epoch:', epoch)
-        accuracy(model, val_loader_mnist)
+        print('\n')
+        print('Validation test after epoch:', epoch)
+        accuracy(model, test_loader)
 
 
 class Model(nn.Module):
@@ -97,29 +97,54 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 loss_fn = torch.nn.CrossEntropyLoss()
 
 train(epochs, optimizer, loss_fn, train_loader_mnist, test_loader_mnist, model)
+
 print('Test Accuracy:')
 accuracy(model, test_loader_mnist)
 
-test_dataset_svhn = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=ToTensor())
+model_svhn_feature = copy.deepcopy(model)
+model_svhn_fine = copy.deepcopy(model)
+
+model_svhn_feature.to(device)
+model_svhn_fine.to(device)
+
+transforms = transforms.Compose([
+    transforms.Resize((28,28)),
+    transforms.Grayscale(),
+    transforms.ToTensor()
+])
+
+train_dataset_svhn = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transforms)
+test_dataset_svhn = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transforms)
+
+train_dataset_svhn, val_dataset_svhn = random_split(train_dataset_svhn, [73257-10000, 10000])
+
+train_loader_svhn = DataLoader(train_dataset_svhn,
+                        batch_size=batch_size,
+                        shuffle=True)                        
+
+val_loader_svhn = DataLoader(train_dataset_svhn,
+                        batch_size=batch_size,
+                        shuffle=True)                        
+
 
 test_loader_svhn = DataLoader(test_dataset_svhn,
                         batch_size=batch_size,
-                        shuffle=False)
+                        shuffle=False)          
 
+print("\nMNIST CNN on SVHN")
+accuracy(model, test_loader_svhn)
 
-def runtest(test_loader):
-    correct, total = 0, 0
-    for _, (data, labels) in enumerate(test_loader):
-        data = torchvision.transforms.Resize((28,28))(torchvision.transforms.Grayscale()(data))
-        data = data.to(device)
-        labels = labels.to(device)
+for i, param in enumerate(model_svhn_feature.parameters()):
+    if i < 4:
+        param.requires_grad = False
 
-        pred = model(data)
-        for i in range(len(labels)):
-            pr = torch.argmax(pred[i], dim=-1)
-            if pr == labels[i]:
-                correct += 1
-            total += 1
-    print(correct, total, correct/total)
+train(4, optimizer, loss_fn, train_loader_svhn, val_loader_svhn, model_svhn_feature)
 
-runtest(test_loader_svhn)
+print("\nMNIST ON CNN AFTER FEATURE-EXTRACTION")
+accuracy(model_svhn_feature, test_loader_svhn)
+
+train(epochs, optimizer, loss_fn, train_loader_svhn, val_loader_svhn, model_svhn_fine)
+
+print("\nMNIST ON CNN AFTER FINE-TUNING")
+accuracy(model_svhn_fine, test_loader_svhn)
+
