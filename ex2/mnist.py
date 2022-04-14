@@ -3,6 +3,8 @@ import torchvision
 import torch.nn as nn
 from torchvision import transforms
 from torch.utils.data import DataLoader, random_split
+import copy
+
 
 if torch.cuda.is_available():    
     device = torch.device("cuda")
@@ -99,15 +101,8 @@ train(epochs, optimizer, loss_fn, train_loader_mnist, test_loader_mnist, model)
 print('Test Accuracy:')
 accuracy(model, test_loader_mnist)
 
-model_svhn_feature = nn.Sequential(
-    model,
-    nn.ReLU(nn.Linear(1000, 10)),
-)
-
-model_svhn_fine = nn.Sequential(
-    model,
-    nn.ReLU(nn.Linear(1000, 10)),
-)
+model_svhn_feature = copy.deepcopy(model)
+model_svhn_fine = copy.deepcopy(model)
 
 model_svhn_feature.to(device)
 model_svhn_fine.to(device)
@@ -140,7 +135,7 @@ print("\nMNIST CNN on SVHN")
 accuracy(model, test_loader_svhn)
 
 for i, param in enumerate(model_svhn_feature.parameters()):
-    if i < 5:
+    if i < 4:
         param.requires_grad = False
 
 train(4, optimizer, loss_fn, train_loader_svhn, val_loader_svhn, model_svhn_feature)
