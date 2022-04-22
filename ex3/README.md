@@ -1,7 +1,7 @@
 # Results
 
 ### Comment on the differences between PCA and t-SNE
-t-SNE manages to cluster together the data far better than PCA manages to.
+t-SNE disregards the actual global distances between the data points unlike PCA, but in turn manages to separate local clusters much more clearly which in the case of the MNIST dataset yeilds a good separation of the classes. However, PCA illustrates the actual mathematical distances between the input vectors accurately.
 
 ### Comment on the first model (virtually not trained at all) and the second one
 The first PCA model is very messy and outside of number 1 class it is difficult to see any pattern. Compare that to the trained version of PCA you can see that clusters have formed and although the clusters are not perfect they are certainly better than the untrained model.
